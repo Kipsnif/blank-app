@@ -29,13 +29,14 @@ def switch_role():
 
 _init_state()
 
-cols = st.columns([3, 1])
-with cols[0]:
+st.set_page_config(page_title="Taskboard", layout="wide")
+header_col, role_col = st.columns([4, 1])
+with header_col:
     st.title("Taskboard — Business ↔ Client")
-with cols[1]:
+with role_col:
     st.markdown("### Current role")
-    st.markdown(f"**{st.session_state.role}**")
-    if st.button("Switch role"):
+    st.info(f"**{st.session_state.role}**")
+    if st.button("Switch role", key="switch_role"):
         switch_role()
 
 st.write("---")
@@ -59,6 +60,7 @@ if st.session_state.role == "Business":
             st.subheader("Open tasks")
             for t in open_tasks:
                 st.write(f"- {t['text']}")
+
         if closed_tasks:
             st.subheader("Completed tasks")
             for t in closed_tasks:
@@ -66,9 +68,7 @@ if st.session_state.role == "Business":
 
 else:
     st.header("Client view")
-    if not open_tasks:
-        st.info("No open tasks — you're all caught up!")
-    else:
+    if open_tasks:
         st.subheader("Open tasks")
         for t in open_tasks:
             if st.checkbox(t["text"], key=f"task_{t['id']}"):
@@ -78,3 +78,6 @@ else:
         st.subheader("Completed tasks")
         for t in closed_tasks:
             st.markdown(f"- ~~{t['text']}~~")
+
+    if not open_tasks and not closed_tasks:
+        st.info("No tasks yet")
