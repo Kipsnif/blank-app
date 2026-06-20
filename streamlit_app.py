@@ -43,13 +43,21 @@ st.write("---")
 
 if st.session_state.role == "Business":
     st.header("Business dashboard")
+    if "new_task_text" not in st.session_state:
+        st.session_state.new_task_text = ""
+
+    def add_task_and_reset():
+        add_task(st.session_state.new_task_text)
+        st.session_state.new_task_text = ""
+
     with st.form("add_task_form", clear_on_submit=True):
-        text = st.text_input("Task description")
-        submitted = st.form_submit_button("Add task")
-        if submitted and text:
-            add_task(text)
+        st.text_input("Task description", key="new_task_text")
+        submitted = st.form_submit_button(
+            "Add task",
+            on_click=add_task_and_reset,
+        )
+        if submitted and st.session_state.new_task_text == "":
             st.success("Task added")
-            st.experimental_rerun()
 
     open_tasks = [t for t in st.session_state.tasks if not t["completed"]]
     closed_tasks = [t for t in st.session_state.tasks if t["completed"]]
