@@ -41,9 +41,6 @@ with role_col:
 
 st.write("---")
 
-open_tasks = [t for t in st.session_state.tasks if not t["completed"]]
-closed_tasks = [t for t in st.session_state.tasks if t["completed"]]
-
 if st.session_state.role == "Business":
     st.header("Business dashboard")
     with st.form("add_task_form", clear_on_submit=True):
@@ -52,6 +49,10 @@ if st.session_state.role == "Business":
         if submitted and text:
             add_task(text)
             st.success("Task added")
+            st.experimental_rerun()
+
+    open_tasks = [t for t in st.session_state.tasks if not t["completed"]]
+    closed_tasks = [t for t in st.session_state.tasks if t["completed"]]
 
     if not st.session_state.tasks:
         st.info("No tasks yet")
@@ -68,11 +69,19 @@ if st.session_state.role == "Business":
 
 else:
     st.header("Client view")
+    open_tasks = [t for t in st.session_state.tasks if not t["completed"]]
+    closed_tasks = [t for t in st.session_state.tasks if t["completed"]]
+
     if open_tasks:
         st.subheader("Open tasks")
         for t in open_tasks:
-            if st.checkbox(t["text"], key=f"task_{t['id']}"):
-                toggle_task(t["id"], True)
+            st.checkbox(
+                t["text"],
+                key=f"task_{t['id']}",
+                value=False,
+                on_change=toggle_task,
+                args=(t["id"], True),
+            )
 
     if closed_tasks:
         st.subheader("Completed tasks")
