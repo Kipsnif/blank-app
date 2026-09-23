@@ -116,7 +116,12 @@ def render_board(interactive=True):
                     st.rerun()
 
 
-def resolve_move(row, column):
+def render_board_in(container, interactive=True):
+	with container.container():
+		render_board(interactive=interactive)
+
+
+def resolve_move(row, column, board_slot):
     base_color = st.session_state.board[row][column]
     selected_color = st.session_state.selected_color
     if base_color not in PRIMARY_COLORS:
@@ -131,11 +136,9 @@ def resolve_move(row, column):
     for tile_row, tile_column in tiles:
         st.session_state.board[tile_row][tile_column] = hybrid_color
 
-    animation_slot = st.empty()
-    with animation_slot.container():
-        render_board(interactive=False)
+    render_board_in(board_slot, interactive=False)
     time.sleep(0.45)
-    animation_slot.empty()
+    board_slot.empty()
 
     goal = st.session_state.goals.get(hybrid_color)
     if goal is None or st.session_state.counts[hybrid_color] >= goal:
@@ -196,11 +199,6 @@ st.markdown(
 st.title("Color Puzzle")
 st.caption("Blend a source color into a connected group, then clear it from the board.")
 
-if st.session_state.pending_move is not None:
-    pending_row, pending_column = st.session_state.pending_move
-    st.session_state.pending_move = None
-    resolve_move(pending_row, pending_column)
-
 score_columns = st.columns(3)
 for score_column, color in zip(score_columns, SECONDARY_COLORS):
     score_column.markdown(
@@ -210,7 +208,12 @@ for score_column, color in zip(score_columns, SECONDARY_COLORS):
     )
 
 st.write("")
-render_board()
+board_slot = st.empty()
+if st.session_state.pending_move is not None:
+    pending_row, pending_column = st.session_state.pending_move
+    st.session_state.pending_move = None
+    resolve_move(pending_row, pending_column, board_slot)
+render_board_in(board_slot)
 
 st.divider()
 st.subheader("Choose a source color")
