@@ -4,14 +4,14 @@ import streamlit as st
 st.set_page_config(page_title="Color Puzzle", page_icon="🎨", layout="centered")
 
 COLORS = {
-	"Red": (235, 68, 68),
-	"Green": (64, 180, 105),
-	"Blue": (68, 125, 235),
+	"Yellow": (246, 196, 64),
+	"Red": (224, 69, 64),
+	"Blue": (52, 104, 220),
 }
 SOLUTION = [
-	["Red", "Red", "Blue"],
-	["Green", "Blue", "Blue"],
-	["Red", "Green", "Green"],
+	["Yellow", "Yellow", "Blue"],
+	["Red", "Blue", "Blue"],
+	["Yellow", "Red", "Red"],
 ]
 
 
@@ -32,7 +32,7 @@ def target_colors():
 
 def reset_game():
 	st.session_state.board = [[None for _ in range(3)] for _ in range(3)]
-	st.session_state.selected_color = "Red"
+	st.session_state.selected_color = "Yellow"
 	st.session_state.locked_rows = set()
 	st.session_state.locked_columns = set()
 
@@ -55,7 +55,9 @@ def update_locks():
 				st.session_state.locked_columns.add(column_index)
 
 
-if "board" not in st.session_state:
+if "board" not in st.session_state or any(
+	cell not in COLORS for row in st.session_state.board for cell in row if cell is not None
+):
 	reset_game()
 
 row_targets, column_targets = target_colors()
@@ -66,6 +68,7 @@ st.markdown(
 	.puzzle-shell { max-width: 640px; margin: 0 auto; }
 	.target-label { color: #687080; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; text-align: center; margin-bottom: 0.35rem; }
 	.target-swatch { height: 22px; border-radius: 6px; border: 1px solid rgba(0, 0, 0, 0.12); margin-bottom: 0.45rem; }
+	.palette-swatch { height: 28px; border-radius: 7px; border: 1px solid rgba(0, 0, 0, 0.12); margin-bottom: 0.35rem; }
 	.row-target { display: flex; align-items: center; justify-content: center; height: 74px; }
 	.tile { height: 74px; border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.12); }
 	.tile-empty { background: #ffffff; }
@@ -84,8 +87,9 @@ with st.container():
 	target_columns = st.columns([0.7, 1, 1, 1])
 	target_columns[0].markdown('<div class="target-label">Rows</div>', unsafe_allow_html=True)
 	for column_index, target in enumerate(column_targets):
+		column_status = "Locked" if column_index in st.session_state.locked_columns else f"{column_index + 1}"
 		target_columns[column_index + 1].markdown(
-			f'<div class="target-label">{column_index + 1}</div><div class="target-swatch" style="background:{color_css(target)}"></div>',
+			f'<div class="target-label">{column_status}</div><div class="target-swatch" style="background:{color_css(target)}"></div>',
 			unsafe_allow_html=True,
 		)
 
@@ -121,6 +125,10 @@ st.subheader("Choose a color")
 palette = st.columns(3)
 for palette_column, color_name in zip(palette, COLORS):
 	selected = color_name == st.session_state.selected_color
+	palette_column.markdown(
+		f'<div class="palette-swatch" style="background:{color_css(COLORS[color_name])}"></div>',
+		unsafe_allow_html=True,
+	)
 	if palette_column.button(
 		f"{'● ' if selected else ''}{color_name}",
 		key=f"palette_{color_name}",
