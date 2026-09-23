@@ -91,8 +91,26 @@ def play_tile(row, column):
 	st.session_state.message = f"{len(tiles)} connected {base_color.lower()} tile{'s' if len(tiles) != 1 else ''} became {hybrid_name.lower()} and cleared."
 
 
-if "board" not in st.session_state:
+board = st.session_state.get("board")
+valid_board = (
+	isinstance(board, list)
+	and len(board) == BOARD_SIZE
+	and all(
+		isinstance(row, list)
+		and len(row) == BOARD_SIZE
+		and all(color in PRIMARY_COLORS for color in row)
+		for row in board
+	)
+)
+if not valid_board:
 	reset_game()
+else:
+	if "selected_color" not in st.session_state or st.session_state.selected_color not in PRIMARY_COLORS:
+		st.session_state.selected_color = "Red"
+	if "orange_count" not in st.session_state:
+		st.session_state.orange_count = 0
+	if "message" not in st.session_state:
+		st.session_state.message = "Choose a color, then place it on a different color tile."
 
 st.markdown(
 	"""
