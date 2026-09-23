@@ -90,7 +90,9 @@ def drop_tiles():
 
 
 def tile_rgb(color):
-    return PRIMARY_RGB.get(color, SECONDARY_RGB[color])
+    if color in PRIMARY_RGB:
+        return PRIMARY_RGB[color]
+    return SECONDARY_RGB[color]
 
 
 def render_board(interactive=True):
