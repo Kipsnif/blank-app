@@ -7,6 +7,7 @@ st.set_page_config(page_title="Color Puzzle", page_icon="⬡", layout="centered"
 
 RADIUS = 3
 COLORS = ("red", "green", "blue")
+DIFFICULTIES = {"Easy": 14, "Medium": 11, "Hard": 9}
 COLOR_LABELS = {"red": "Red", "green": "Green", "blue": "Blue"}
 COLOR_MARKS = {"red": "🔴", "green": "🟢", "blue": "🔵"}
 EMPTY_MARK = "·"
@@ -27,17 +28,46 @@ def neighbors(coordinate):
 	return [(q + dq, r + dr) for dq, dr in directions]
 
 
-def make_puzzle(seed):
+def make_puzzle(seed, difficulty):
 	rng = random.Random(seed)
 	coordinates = board_coordinates()
 	solution = {coordinate: rng.choice(COLORS) for coordinate in coordinates}
-	clue_coordinates = [
+	candidates = [
 		coordinate
 		for coordinate in coordinates
 		if max(abs(coordinate[0]), abs(coordinate[1]), abs(sum(coordinate))) <= 2
 	]
-	rng.shuffle(clue_coordinates)
-	clue_coordinates = clue_coordinates[:8]
+	editable = set(coordinates)
+	clue_coordinates = []
+	rng.shuffle(candidates)
+
+	# Eerst zorgen we dat elke speelbare tegel door minstens een clue begrensd wordt.
+	while editable:
+		best_candidates = [
+			candidate
+			for candidate in candidates
+			if candidate not in clue_coordinates
+		]
+		best_score = max(
+			len(set(neighbors(candidate)) & editable)
+			for candidate in best_candidates
+		)
+		best_candidates = [
+			candidate
+			for candidate in best_candidates
+			if len(set(neighbors(candidate)) & editable) == best_score
+		]
+		selected = rng.choice(best_candidates)
+		clue_coordinates.append(selected)
+		editable.discard(selected)
+		editable.difference_update(neighbors(selected))
+
+	remaining_candidates = [
+		candidate for candidate in candidates if candidate not in clue_coordinates
+	]
+	rng.shuffle(remaining_candidates)
+	target = max(DIFFICULTIES[difficulty], len(clue_coordinates))
+	clue_coordinates.extend(remaining_candidates[: target - len(clue_coordinates)])
 	clues = {
 		coordinate: {
 			"color": solution[coordinate],
@@ -51,10 +81,11 @@ def make_puzzle(seed):
 	return solution, clues
 
 
-def start_puzzle():
+def start_puzzle(difficulty):
 	seed = st.session_state.get("seed", 0) + 1
-	solution, clues = make_puzzle(seed)
+	solution, clues = make_puzzle(seed, difficulty)
 	st.session_state.seed = seed
+	st.session_state.difficulty = difficulty
 	st.session_state.solution = solution
 	st.session_state.clues = clues
 	st.session_state.board = {
@@ -103,11 +134,22 @@ def check_puzzle():
 		st.session_state.feedback = "Goed gedaan. Alle clues kloppen!"
 
 
+if "difficulty" not in st.session_state:
+	st.session_state.difficulty = "Medium"
 if "clues" not in st.session_state:
-	start_puzzle()
+	start_puzzle(st.session_state.difficulty)
 
 st.title("Color Puzzle")
 st.caption("Kleur de zes buren van elke clue zo dat het cijfer precies klopt.")
+
+selected_difficulty = st.selectbox(
+	"Difficulty",
+	options=list(DIFFICULTIES),
+	index=list(DIFFICULTIES).index(st.session_state.difficulty),
+)
+if selected_difficulty != st.session_state.difficulty:
+	start_puzzle(selected_difficulty)
+	st.rerun()
 
 st.markdown(
 	"""
@@ -157,7 +199,7 @@ action_columns = st.columns(2)
 if action_columns[0].button("Check puzzle", type="primary", use_container_width=True):
 	check_puzzle()
 if action_columns[1].button("New puzzle", use_container_width=True):
-	start_puzzle()
+	start_puzzle(st.session_state.difficulty)
 	st.rerun()
 
 if st.session_state.feedback:
