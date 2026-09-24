@@ -67,8 +67,12 @@ def start_puzzle():
 
 def cycle_color(coordinate):
 	current = st.session_state.board[coordinate]
-	next_index = -1 if current is None else COLORS.index(current)
-	st.session_state.board[coordinate] = COLORS[(next_index + 1) % len(COLORS)]
+	if current is None:
+		st.session_state.board[coordinate] = COLORS[0]
+	elif current == COLORS[-1]:
+		st.session_state.board[coordinate] = None
+	else:
+		st.session_state.board[coordinate] = COLORS[COLORS.index(current) + 1]
 	st.session_state.feedback = ""
 
 
